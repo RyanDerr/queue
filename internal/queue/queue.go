@@ -1,0 +1,174 @@
+package queue
+
+import (
+	"sync"
+
+	"github.com/RyanDerr/queue/internal/errors"
+	"github.com/RyanDerr/queue/internal/node"
+	"github.com/RyanDerr/queue/internal/util"
+)
+
+// queue is a struct that represents a queue data structure. It contains
+// a mutex for thread safety, the size of the queue, and pointers to the
+// head and tail nodes of the queue.
+type queue[T any] struct {
+	sync.RWMutex
+
+	size uint
+	head *node.Node[T]
+	tail *node.Node[T]
+}
+
+// New creates and returns a new instance of a queue.
+func New[T any]() *queue[T] {
+	const op = "queue.New"
+	head, tail := node.New(*new(T)), node.New(*new(T))
+
+	if err := head.SetNext(tail); err != nil {
+		panic(errors.Wrap(op, err))
+	}
+
+	if err := tail.SetPrev(head); err != nil {
+		panic(errors.Wrap(op, err))
+	}
+
+	return &queue[T]{
+		size: 0,
+		head: head,
+		tail: tail,
+	}
+}
+
+// Len returns the number of elements currently in the queue.
+func (q *queue[T]) Len() uint {
+	q.RLock()
+	defer q.RUnlock()
+	return q.size
+}
+
+// Enqueue adds an element to the back of the queue. If the provided value is
+// nil, it returns an error.
+func (q *queue[T]) Enqueue(v T) error {
+	const op = "queue.(Queue).Enqueue"
+	q.Lock()
+	defer q.Unlock()
+
+	newNode := node.New(v)
+
+	// Get the node that is currently at the end of the queue, which is the node
+	// that will become the new node's previous node in the queue.
+	curLast, err := q.tail.GetPrev()
+	switch {
+	case err != nil:
+		return errors.Wrap(op, err)
+	case util.IsNil(curLast):
+		return errors.Wrap(op, ErrInternal, errors.WithMsg("fetching the tail node's previous node resulted in nil"))
+	}
+
+	// Set the new node to be the next node after the current last node in the queue.
+	err = curLast.SetNext(newNode)
+	if err != nil {
+		return errors.Wrap(op, err)
+	}
+
+	// Link the new node back to the current last node and forward to the tail.
+	err = newNode.SetPrev(curLast)
+	if err != nil {
+		return errors.Wrap(op, err)
+	}
+
+	err = newNode.SetNext(q.tail)
+	if err != nil {
+		return errors.Wrap(op, err)
+	}
+
+	// Set the new node to be the previous node before the tail node in the queue.
+	err = q.tail.SetPrev(newNode)
+	if err != nil {
+		return errors.Wrap(op, err)
+	}
+
+	q.size++
+	return nil
+}
+
+// Dequeue removes and returns the element at the front of the queue. If the
+// queue is empty, it returns an error.
+func (q *queue[T]) Dequeue() (T, error) {
+	const op = "queue.(Queue).Dequeue"
+	q.Lock()
+	defer q.Unlock()
+	if q.size == 0 {
+		return *new(T), errors.Wrap(op, ErrEmptyQueue)
+	}
+
+	// Get the node that is currently at the head of the queue, which is the
+	// node that will be dequeued.
+	curHead, err := q.head.GetNext()
+	switch {
+	case err != nil:
+		return *new(T), errors.Wrap(op, err)
+	case util.IsNil(curHead):
+		return *new(T), errors.Wrap(op, ErrInternal, errors.WithMsg("fetching the head node's next node resulted in nil"))
+	}
+
+	// Get the next node after the current head node, which will become the new head of the queue.
+	newHead, err := curHead.GetNext()
+	switch {
+	case err != nil:
+		return *new(T), errors.Wrap(op, err)
+	case util.IsNil(newHead):
+		return *new(T), errors.Wrap(op, ErrInternal, errors.WithMsg("fetching the next node of the head node resulted in nil"))
+	}
+
+	// Set the next node after the current head node to be the new head of the queue.
+	err = q.head.SetNext(newHead)
+	if err != nil {
+		return *new(T), errors.Wrap(op, err)
+	}
+
+	err = newHead.SetPrev(q.head)
+	if err != nil {
+		return *new(T), errors.Wrap(op, err)
+	}
+
+	q.size--
+	return curHead.GetValue()
+}
+
+// Peak returns the element at the front of the queue without removing it. If the
+// queue is empty, it returns an error.
+func (q *queue[T]) Peak() (T, error) {
+	const op = "queue.(Queue).Peak"
+	q.RLock()
+	defer q.RUnlock()
+	if q.size == 0 {
+		return *new(T), errors.Wrap(op, ErrEmptyQueue)
+	}
+
+	curHead, err := q.head.GetNext()
+	switch {
+	case err != nil:
+		return *new(T), errors.Wrap(op, err)
+	case util.IsNil(curHead):
+		return *new(T), errors.Wrap(op, ErrInternal, errors.WithMsg("fetching the head node's next node resulted in nil"))
+	}
+
+	return curHead.GetValue()
+}
+
+// Clear removes all elements from the queue, resetting it to an empty state.
+func (q *queue[T]) Clear() {
+	q.Lock()
+	defer q.Unlock()
+
+	// Reset the head and tail nodes to their initial state, with the head's next node
+	// pointing to the tail and the tail's previous node pointing to the head.
+	if err := q.head.SetNext(q.tail); err != nil {
+		panic(errors.Wrap("queue.(Queue).Clear", err))
+	}
+	if err := q.tail.SetPrev(q.head); err != nil {
+		panic(errors.Wrap("queue.(Queue).Clear", err))
+	}
+	q.size = 0
+}
