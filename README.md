@@ -57,5 +57,6 @@ Sentinel errors are provided for use with `errors.Is`
 
 - `ErrEmptyQueue` is returned when an operation is attempted on an empty queue
 - `ErrNilNode` is returned when an operation is performed on or with a nil node
+- `ErrQueueFull` is returned when an operation is performed to enqueue an element that exceeds the optional queue size.
 - `ErrInitialization` is returned when the queue fails to initialize properly
 - `ErrInternal` is returned when unexpected internal behavior is encountered

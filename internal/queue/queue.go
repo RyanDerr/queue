@@ -14,14 +14,23 @@ import (
 type queue[T any] struct {
 	sync.RWMutex
 
+	// size keeps track of the number of elements currently in the queue.
 	size uint
+	// capacity is an optional limit on the number of elements the queue can hold.
+	// If capacity is 0, the queue has no size limit.
+	capacity uint
+	// head is a pointer to the dummy head node of the queue.
+	//  The actual first element in the queue is the next node after the head.
 	head *node.Node[T]
+	// tail is a pointer to the dummy tail node of the queue.
+	// The actual last element in the queue is the previous node before the tail.
 	tail *node.Node[T]
 }
 
 // New creates and returns a new instance of a queue.
-func New[T any]() *queue[T] {
+func New[T any](options ...Option) *queue[T] {
 	const op = "queue.New"
+	opts := GetOpts(options...)
 	head, tail := node.New(*new(T)), node.New(*new(T))
 
 	if err := head.SetNext(tail); err != nil {
@@ -33,9 +42,10 @@ func New[T any]() *queue[T] {
 	}
 
 	return &queue[T]{
-		size: 0,
-		head: head,
-		tail: tail,
+		size:     0,
+		head:     head,
+		tail:     tail,
+		capacity: opts.withQueueSize,
 	}
 }
 
@@ -52,6 +62,12 @@ func (q *queue[T]) Enqueue(v T) error {
 	const op = "queue.(Queue).Enqueue"
 	q.Lock()
 	defer q.Unlock()
+
+	// If a capacity limit is set on the queue
+	// and the queue has reached that limit, return an error.
+	if q.capacity > 0 && q.size >= q.capacity {
+		return errors.Wrap(op, ErrQueueFull)
+	}
 
 	newNode := node.New(v)
 
