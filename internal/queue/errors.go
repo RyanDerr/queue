@@ -7,6 +7,8 @@ var (
 	ErrInitialization = errors.New("queue failed to initialize")
 	// ErrEmptyQueue is an error that is returned when an operation is attempted on an empty queue.
 	ErrEmptyQueue = errors.New("queue is empty")
+	// ErrQueueFull is an error that is returned when an attempt is made to enqueue an element into a full queue.
+	ErrQueueFull = errors.New("queue is full")
 	// ErrInternal is a generic error that is returned when an unexpected behavior is encountered.
 	ErrInternal = errors.New("encountered unexpected internal error")
 )

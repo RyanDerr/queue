@@ -11,9 +11,30 @@ import (
 func TestNew(t *testing.T) {
 	t.Parallel()
 
-	q := New[int]()
-	require.NotNil(t, q)
-	assert.Equal(t, uint(0), q.Len())
+	tests := []struct {
+		name    string
+		opts    []Option
+		wantLen uint
+	}{
+		{
+			name:    "default unbounded",
+			opts:    nil,
+			wantLen: 0,
+		},
+		{
+			name:    "with capacity",
+			opts:    []Option{WithCapacity(5)},
+			wantLen: 0,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			q := New[int](tt.opts...)
+			require.NotNil(t, q)
+			assert.Equal(t, tt.wantLen, q.Len())
+		})
+	}
 }
 
 func TestEnqueue(t *testing.T) {
@@ -45,6 +66,94 @@ func TestEnqueue(t *testing.T) {
 			assert.Equal(t, tt.wantLength, q.Len())
 		})
 	}
+}
+
+func TestEnqueueWithCapacity(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		capacity uint
+		enqueue  []int
+		wantLen  uint
+		wantErr  error
+	}{
+		{
+			name:     "allows enqueue up to capacity",
+			capacity: 3,
+			enqueue:  []int{1, 2, 3},
+			wantLen:  3,
+		},
+		{
+			name:     "returns ErrQueueFull at capacity",
+			capacity: 2,
+			enqueue:  []int{1, 2, 3},
+			wantLen:  2,
+			wantErr:  ErrQueueFull,
+		},
+		{
+			name:     "capacity of 1 blocks second enqueue",
+			capacity: 1,
+			enqueue:  []int{42, 43},
+			wantLen:  1,
+			wantErr:  ErrQueueFull,
+		},
+		{
+			name:     "zero capacity means unbounded",
+			capacity: 0,
+			enqueue:  []int{1, 2, 3, 4, 5, 6, 7, 8, 9, 10},
+			wantLen:  10,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			q := New[int](WithCapacity(tt.capacity))
+
+			var lastErr error
+			for _, v := range tt.enqueue {
+				if err := q.Enqueue(v); err != nil {
+					lastErr = err
+					break
+				}
+			}
+
+			if tt.wantErr != nil {
+				require.ErrorIs(t, lastErr, tt.wantErr)
+			} else {
+				require.NoError(t, lastErr)
+			}
+			assert.Equal(t, tt.wantLen, q.Len())
+		})
+	}
+
+	t.Run("enqueue succeeds after dequeue frees space", func(t *testing.T) {
+		t.Parallel()
+		q := New[int](WithCapacity(2))
+		require.NoError(t, q.Enqueue(1))
+		require.NoError(t, q.Enqueue(2))
+
+		_, err := q.Dequeue()
+		require.NoError(t, err)
+
+		require.NoError(t, q.Enqueue(3))
+		assert.Equal(t, uint(2), q.Len())
+	})
+
+	t.Run("capacity of 1 allows repeated use after dequeue", func(t *testing.T) {
+		t.Parallel()
+		q := New[int](WithCapacity(1))
+		require.NoError(t, q.Enqueue(42))
+
+		v, err := q.Dequeue()
+		require.NoError(t, err)
+		assert.Equal(t, 42, v)
+
+		require.NoError(t, q.Enqueue(99))
+		v, err = q.Dequeue()
+		require.NoError(t, err)
+		assert.Equal(t, 99, v)
+	})
 }
 
 func TestDequeue(t *testing.T) {

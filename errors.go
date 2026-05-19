@@ -10,6 +10,8 @@ var (
 	ErrEmptyQueue = queue.ErrEmptyQueue
 	// ErrNilNode is returned when an operation is performed on or with a nil node.
 	ErrNilNode = node.ErrNilNode
+	// ErrQueueFull is returned when an attempt is made to enqueue an element into a full queue.
+	ErrQueueFull = queue.ErrQueueFull
 	// ErrInitialization is returned when the queue fails to initialize properly.
 	ErrInitialization = queue.ErrInitialization
 	// ErrInternal is returned when unexpected internal behavior is encountered.

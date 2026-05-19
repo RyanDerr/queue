@@ -11,17 +11,34 @@ import (
 func TestNew(t *testing.T) {
 	t.Parallel()
 
-	q := New[int]()
-	require.NotNil(t, q)
-	assert.Equal(t, uint(0), q.size)
-
-	next, err := q.head.GetNext()
-	require.NoError(t, err)
-	assert.Equal(t, q.tail, next)
-
-	prev, err := q.tail.GetPrev()
-	require.NoError(t, err)
-	assert.Equal(t, q.head, prev)
+	tests := []struct {
+		name     string
+		options  []Option
+		wantSize uint
+		wantCap  uint
+	}{
+		{
+			name:     "default options",
+			options:  nil,
+			wantSize: 0,
+			wantCap:  0,
+		},
+		{
+			name:     "custom capacity",
+			options:  []Option{WithCapacity(10)},
+			wantSize: 0,
+			wantCap:  10,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			q := New[int](tt.options...)
+			require.NotNil(t, q)
+			assert.Equal(t, tt.wantSize, q.size)
+			assert.Equal(t, tt.wantCap, q.capacity)
+		})
+	}
 }
 
 func TestEnqueue(t *testing.T) {
@@ -53,6 +70,18 @@ func TestEnqueue(t *testing.T) {
 			assert.Equal(t, tt.wantSize, q.size)
 		})
 	}
+
+	t.Run("returns ErrQueueFull when at capacity", func(t *testing.T) {
+		t.Parallel()
+
+		q := New[int](WithCapacity(2))
+		require.NoError(t, q.Enqueue(1))
+		require.NoError(t, q.Enqueue(2))
+
+		err := q.Enqueue(3)
+		require.ErrorIs(t, err, ErrQueueFull)
+		assert.Equal(t, uint(2), q.size)
+	})
 }
 
 func TestEnqueueLinkedStructure(t *testing.T) {

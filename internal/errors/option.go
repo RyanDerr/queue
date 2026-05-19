@@ -18,6 +18,8 @@ func getDefaultOptions() Options {
 	return Options{}
 }
 
+// WithMsg allows you to provide a custom message that will be included in the error
+// when using the Wrap function.
 func WithMsg(msg string) Option {
 	return func(o *Options) {
 		o.withMsg = msg
