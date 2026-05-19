@@ -1,29 +1,25 @@
 package queue
 
-type Option func(*Options)
+// Option configures a queue at construction time.
+type Option func(*options)
 
-type Options struct {
-	// withQueueSize specifies the maximum number of elements the queue can hold.
-	withQueueSize uint
+type options struct {
+	capacity uint
 }
 
-func GetOpts(opt ...Option) Options {
-	opts := getDefaultOptions()
-	for _, o := range opt {
-		o(&opts)
+func getOpts(opts ...Option) options {
+	o := options{}
+	for _, opt := range opts {
+		opt(&o)
 	}
-	return opts
+	return o
 }
 
-func getDefaultOptions() Options {
-	return Options{}
-}
-
-// WithQueueSize sets the maximum size of the queue.
-// If the queue reaches this size, it will not accept
-// new elements until some are removed.
-func WithQueueSize(size uint) Option {
-	return func(o *Options) {
-		o.withQueueSize = size
+// WithCapacity sets the maximum number of elements the queue can hold.
+// Enqueue will return ErrQueueFull once this limit is reached.
+// A value of 0 means unlimited.
+func WithCapacity(size uint) Option {
+	return func(o *options) {
+		o.capacity = size
 	}
 }

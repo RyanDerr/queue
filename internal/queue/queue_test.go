@@ -25,7 +25,7 @@ func TestNew(t *testing.T) {
 		},
 		{
 			name:     "custom capacity",
-			options:  []Option{WithQueueSize(10)},
+			options:  []Option{WithCapacity(10)},
 			wantSize: 0,
 			wantCap:  10,
 		},
@@ -74,7 +74,7 @@ func TestEnqueue(t *testing.T) {
 	t.Run("returns ErrQueueFull when at capacity", func(t *testing.T) {
 		t.Parallel()
 
-		q := New[int](WithQueueSize(2))
+		q := New[int](WithCapacity(2))
 		require.NoError(t, q.Enqueue(1))
 		require.NoError(t, q.Enqueue(2))
 

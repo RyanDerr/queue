@@ -28,9 +28,9 @@ type queue[T any] struct {
 }
 
 // New creates and returns a new instance of a queue.
-func New[T any](options ...Option) *queue[T] {
+func New[T any](opts ...Option) *queue[T] {
 	const op = "queue.New"
-	opts := GetOpts(options...)
+	o := getOpts(opts...)
 	head, tail := node.New(*new(T)), node.New(*new(T))
 
 	if err := head.SetNext(tail); err != nil {
@@ -45,7 +45,7 @@ func New[T any](options ...Option) *queue[T] {
 		size:     0,
 		head:     head,
 		tail:     tail,
-		capacity: opts.withQueueSize,
+		capacity: o.capacity,
 	}
 }
 

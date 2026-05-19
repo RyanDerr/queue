@@ -16,6 +16,6 @@ type Queue[T any] interface {
 }
 
 // New creates and returns a new instance of a Queue.
-func New[T any]() Queue[T] {
-	return queue.New[T]()
+func New[T any](opts ...Option) Queue[T] {
+	return queue.New[T](opts...)
 }
