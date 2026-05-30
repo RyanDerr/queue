@@ -177,15 +177,15 @@ func TestDequeueRestoresHeadTailLink(t *testing.T) {
 	assert.Equal(t, q.tail, next)
 }
 
-func TestDequeueLeftRestoresHeadTailLink(t *testing.T) {
+func TestDequeueBackRestoresHeadTailLink(t *testing.T) {
 	t.Parallel()
 
 	q := New[int]()
 	require.NoError(t, q.Enqueue(1))
 	require.NoError(t, q.Enqueue(2))
-	_, err := q.DequeueLeft()
+	_, err := q.DequeueBack()
 	require.NoError(t, err)
-	_, err = q.DequeueLeft()
+	_, err = q.DequeueBack()
 	require.NoError(t, err)
 
 	next, err := q.head.GetNext()
@@ -279,7 +279,7 @@ func TestClear(t *testing.T) {
 	}
 }
 
-func TestDequeueLeft(t *testing.T) {
+func TestDequeueBack(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -319,13 +319,13 @@ func TestDequeueLeft(t *testing.T) {
 			}
 
 			if tt.wantErr != nil {
-				_, err := q.DequeueLeft()
+				_, err := q.DequeueBack()
 				require.ErrorIs(t, err, tt.wantErr)
 				return
 			}
 
 			for i := range tt.dequeues {
-				got, err := q.DequeueLeft()
+				got, err := q.DequeueBack()
 				require.NoError(t, err)
 				assert.Equal(t, tt.wantOrder[i], got)
 			}

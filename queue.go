@@ -15,8 +15,8 @@ type Queue[T any] interface {
 	Enqueue(v T) error
 	// Dequeue removes and returns the element at the front of the queue.
 	Dequeue() (T, error)
-	// DequeueLeft removes and returns the element at the back of the queue.
-	DequeueLeft() (T, error)
+	// DequeueBack removes and returns the element at the back of the queue.
+	DequeueBack() (T, error)
 	// Peak returns the element at the front of the queue without removing it.
 	Peak() (T, error)
 	// Clear removes all elements from the queue.
