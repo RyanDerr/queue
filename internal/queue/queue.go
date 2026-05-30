@@ -189,10 +189,10 @@ func (q *queue[T]) Clear() {
 	q.size = 0
 }
 
-// DequeueBack removes and returns the element at the back of the queue. If the
+// DequeueLeft removes and returns the element at the back of the queue. If the
 // queue is empty, it returns an error.
-func (q *queue[T]) DequeueBack() (T, error) {
-	const op = "queue.(Queue).DequeueBack"
+func (q *queue[T]) DequeueLeft() (T, error) {
+	const op = "queue.(Queue).DequeueLeft"
 	q.Lock()
 	defer q.Unlock()
 

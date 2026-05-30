@@ -207,7 +207,7 @@ func TestDequeue(t *testing.T) {
 	}
 }
 
-func TestDequeueBack(t *testing.T) {
+func TestDequeueLeft(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
@@ -245,13 +245,13 @@ func TestDequeueBack(t *testing.T) {
 			}
 
 			if tc.wantErr != nil {
-				_, err := q.DequeueBack()
+				_, err := q.DequeueLeft()
 				require.ErrorIs(t, err, tc.wantErr)
 				return
 			}
 
 			for i := range tc.dequeues {
-				got, err := q.DequeueBack()
+				got, err := q.DequeueLeft()
 				require.NoError(t, err)
 				assert.Equal(t, tc.wantOrder[i], got)
 			}
@@ -386,7 +386,7 @@ func TestInterleavedOperations(t *testing.T) {
 
 	require.NoError(t, q.Enqueue(3))
 
-	v, _ = q.DequeueBack()
+	v, _ = q.DequeueLeft()
 	assert.Equal(t, 3, v)
 
 	v, _ = q.Dequeue()

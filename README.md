@@ -48,7 +48,7 @@ The `Queue[T]` interface provides the following methods
 - `Len()` returns the number of elements in the queue
 - `Enqueue(v T)` adds an element to the back of the queue
 - `Dequeue()` removes and returns the element at the front of the queue
-- `DequeueBack()` removes and returns the element at the back of the queue
+- `DequeueLeft()` removes and returns the element at the back of the queue
 - `Peak()` returns the element at the front of the queue without removing it
 - `Clear()` removes all elements from the queue
 
