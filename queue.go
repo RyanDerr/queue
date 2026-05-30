@@ -11,6 +11,7 @@ type Queue[T any] interface {
 	Len() uint
 	Enqueue(v T) error
 	Dequeue() (T, error)
+	DequeueLeft() (T, error)
 	Peak() (T, error)
 	Clear()
 }
