@@ -8,11 +8,17 @@ import "github.com/RyanDerr/queue/internal/queue"
 // queue, returning the element at the front of the queue without removing it, and
 // clearing all elements from the queue.
 type Queue[T any] interface {
+	// Len returns the number of elements in the queue.
 	Len() uint
+	// Enqueue adds an element to the back of the queue.
 	Enqueue(v T) error
+	// Dequeue removes and returns the element at the front of the queue.
 	Dequeue() (T, error)
+	// DequeueLeft removes and returns the element at the back of the queue.
 	DequeueLeft() (T, error)
+	// Peak returns the element at the front of the queue without removing it.
 	Peak() (T, error)
+	// Clear removes all elements from the queue.
 	Clear()
 }
 
