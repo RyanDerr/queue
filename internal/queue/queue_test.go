@@ -279,7 +279,7 @@ func TestClear(t *testing.T) {
 	}
 }
 
-func TestDequeueLeft(t *testing.T) {
+func TestDequeueBack(t *testing.T) {
 	t.Parallel()
 
 	tests := []struct {
