@@ -207,6 +207,58 @@ func TestDequeue(t *testing.T) {
 	}
 }
 
+func TestDequeueBack(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name      string
+		enqueue   []int
+		dequeues  int
+		wantOrder []int
+		wantErr   error
+	}{
+		{
+			name:    "empty queue returns ErrEmptyQueue",
+			enqueue: nil,
+			wantErr: ErrEmptyQueue,
+		},
+		{
+			name:      "LIFO order",
+			enqueue:   []int{1, 2, 3},
+			dequeues:  3,
+			wantOrder: []int{3, 2, 1},
+		},
+		{
+			name:      "partial dequeue",
+			enqueue:   []int{10, 20, 30},
+			dequeues:  1,
+			wantOrder: []int{30},
+		},
+	}
+
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			t.Parallel()
+			q := New[int]()
+			for _, v := range tc.enqueue {
+				require.NoError(t, q.Enqueue(v))
+			}
+
+			if tc.wantErr != nil {
+				_, err := q.DequeueBack()
+				require.ErrorIs(t, err, tc.wantErr)
+				return
+			}
+
+			for i := range tc.dequeues {
+				got, err := q.DequeueBack()
+				require.NoError(t, err)
+				assert.Equal(t, tc.wantOrder[i], got)
+			}
+		})
+	}
+}
+
 func TestPeak(t *testing.T) {
 	t.Parallel()
 
@@ -334,11 +386,11 @@ func TestInterleavedOperations(t *testing.T) {
 
 	require.NoError(t, q.Enqueue(3))
 
-	v, _ = q.Dequeue()
-	assert.Equal(t, 2, v)
+	v, _ = q.DequeueBack()
+	assert.Equal(t, 3, v)
 
 	v, _ = q.Dequeue()
-	assert.Equal(t, 3, v)
+	assert.Equal(t, 2, v)
 }
 
 func TestGenericTypes(t *testing.T) {

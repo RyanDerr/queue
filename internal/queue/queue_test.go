@@ -177,6 +177,22 @@ func TestDequeueRestoresHeadTailLink(t *testing.T) {
 	assert.Equal(t, q.tail, next)
 }
 
+func TestDequeueBackRestoresHeadTailLink(t *testing.T) {
+	t.Parallel()
+
+	q := New[int]()
+	require.NoError(t, q.Enqueue(1))
+	require.NoError(t, q.Enqueue(2))
+	_, err := q.DequeueBack()
+	require.NoError(t, err)
+	_, err = q.DequeueBack()
+	require.NoError(t, err)
+
+	next, err := q.head.GetNext()
+	require.NoError(t, err)
+	assert.Equal(t, q.tail, next)
+}
+
 func TestPeak(t *testing.T) {
 	t.Parallel()
 
@@ -259,6 +275,61 @@ func TestClear(t *testing.T) {
 			prev, err := q.tail.GetPrev()
 			require.NoError(t, err)
 			assert.Equal(t, q.head, prev)
+		})
+	}
+}
+
+func TestDequeueBack(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name      string
+		enqueue   []int
+		dequeues  int
+		wantOrder []int
+		wantErr   error
+		wantSize  uint
+	}{
+		{
+			name:    "empty queue returns ErrEmptyQueue",
+			enqueue: nil,
+			wantErr: ErrEmptyQueue,
+		},
+		{
+			name:      "LIFO order",
+			enqueue:   []int{10, 20, 30},
+			dequeues:  3,
+			wantOrder: []int{30, 20, 10},
+			wantSize:  0,
+		},
+		{
+			name:      "partial dequeue",
+			enqueue:   []int{10, 20, 30},
+			dequeues:  1,
+			wantOrder: []int{30},
+			wantSize:  2,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			q := New[int]()
+			for _, v := range tt.enqueue {
+				require.NoError(t, q.Enqueue(v))
+			}
+
+			if tt.wantErr != nil {
+				_, err := q.DequeueBack()
+				require.ErrorIs(t, err, tt.wantErr)
+				return
+			}
+
+			for i := range tt.dequeues {
+				got, err := q.DequeueBack()
+				require.NoError(t, err)
+				assert.Equal(t, tt.wantOrder[i], got)
+			}
+			assert.Equal(t, tt.wantSize, q.size)
 		})
 	}
 }

@@ -188,3 +188,48 @@ func (q *queue[T]) Clear() {
 	}
 	q.size = 0
 }
+
+// DequeueBack removes and returns the element at the back of the queue. If the
+// queue is empty, it returns an error.
+func (q *queue[T]) DequeueBack() (T, error) {
+	const op = "queue.(Queue).DequeueBack"
+	q.Lock()
+	defer q.Unlock()
+
+	if q.size == 0 {
+		return *new(T), errors.Wrap(op, ErrEmptyQueue)
+	}
+
+	// Get the node that is currently at the tail of the queue, which is the
+	// node that will be dequeued.
+	curTail, err := q.tail.GetPrev()
+	switch {
+	case err != nil:
+		return *new(T), errors.Wrap(op, err)
+	case util.IsNil(curTail):
+		return *new(T), errors.Wrap(op, ErrInternal, errors.WithMsg("fetching the tail node's previous node resulted in nil"))
+	}
+
+	// Get the previous node before the current tail node, which will become the new tail of the queue.
+	newTail, err := curTail.GetPrev()
+	switch {
+	case err != nil:
+		return *new(T), errors.Wrap(op, err)
+	case util.IsNil(newTail):
+		return *new(T), errors.Wrap(op, ErrInternal, errors.WithMsg("fetching the previous node of the tail node resulted in nil"))
+	}
+
+	// Set the previous node before the current tail node to be the new tail of the queue.
+	err = q.tail.SetPrev(newTail)
+	if err != nil {
+		return *new(T), errors.Wrap(op, err)
+	}
+
+	err = newTail.SetNext(q.tail)
+	if err != nil {
+		return *new(T), errors.Wrap(op, err)
+	}
+
+	q.size--
+	return curTail.GetValue()
+}
